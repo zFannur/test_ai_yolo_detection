@@ -1,0 +1,11 @@
+# open_product.yaml
+
+path: C:/Users/zfann/PycharmProjects/test_ai_yolo_detect/datasets/open_product
+
+train: train/images
+val: valid/images
+test: test/images
+
+names:
+  0: Product
+  1: Open_product

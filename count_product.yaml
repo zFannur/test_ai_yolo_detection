@@ -1,0 +1,11 @@
+# count_product.yaml
+
+path: C:/Users/zfann/PycharmProjects/test_ai_yolo_detect/datasets/count_product  # Путь к датасету
+
+train: train/images
+val: valid/images
+test: test/images
+
+names:
+  0: Bag
+  1: Product

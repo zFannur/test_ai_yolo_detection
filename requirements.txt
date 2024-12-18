@@ -1,0 +1,5 @@
+opencv-python
+numpy
+ultralytics
+label-studio
+psycopg2-binary

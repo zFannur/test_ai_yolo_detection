@@ -1,7 +1,13 @@
 # scripts/train.py
 
+import sys
+import os
+
+# Добавляем путь к корневой директории
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
 from ultralytics import YOLO
-from config import MODEL_NAME, EPOCHS, IMG_SIZE, DEVICE
+from scripts.config import MODEL_NAME, EPOCHS, IMG_SIZE, DEVICE
 
 
 def main():

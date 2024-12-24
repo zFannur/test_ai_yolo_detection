@@ -1,43 +1,220 @@
-# Smoking Detection with yolo11
+# README.md
 
-Этот проект предназначен для обнаружения сигареты на видео и определения, курит ли человек, на основе расстояния между сигаретой и лицом.
+## Обзор
 
-### Установка зависимостей
+Данный проект направлен на разработку системы, способной определять и анализировать действия на складе с использованием моделей глубокого обучения, таких как YOLO. Основные задачи включают обнаружение курения, отслеживание движения, идентификацию открытых товаров и многое другое.
+
+---
+
+## Функциональность
+
+1. ✅ Обнаружение курения.
+2. ❌ Отслеживание движения внутри склада.
+3. ❌ Определение ношения определенных предметов (например, кепок).
+4. ❌ Подсчет товаров.
+5. ✅ Определение, когда человек смотрит прямо в камеру.
+6. ❌ Обнаружение драк.
+7. ❌ Определение падений.
+8. ❌ Выявление скрытых объектов.
+9. ✅ Контроль вскрытия упаковки.
+10. ❌ Разметка зон работы.
+11. ❌ Интерфейс для обработки событий
+
+---
+
+## Настройка проекта
+
+### Настройка окружения
+
+1. **Создание и активация виртуального окружения:**
+
+   ```bash
+   python3.12 -m venv .venv
+   source .venv/bin/activate # Для Linux/MacOS
+   .\.venv\Scripts\activate # Для Windows
+   ```
+
+2. **Установка CUDA (опционально, для ускорения на видеокартах NVIDIA):**
+
+   - Загруз[ите с ](https://developer.nvidia.com/cuda-12-4-0-download-archive)[NVIDIA CUDA](https://developer.nvidia.com/cuda-12-4-0-download-archive).
+   - После установки проверьте:
+     ```bash
+     nvcc --version
+     ```
+   - Установите PyTorch с поддержкой CUDA:
+     ```bash
+     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+     ```
+
+3. **Установка зависимостей:**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### Разделение видео на кадры
+
+1. **Установка FFmpeg:**
+   ```bash
+   winget install ffmpeg # Для Windows
+   ```
+2. **Извлечение кадров из видео:**
+   ```bash
+   ffmpeg -i train.mp4 -vf fps=1.5 images_train/1_img%04d.png
+   ```
+   - `train.mp4`: входное видео.
+   - `fps=1.5`: частота извлечения кадров.
+   - `images_train/1_img%04d.png`: директория и шаблон имен файлов для сохранения.
+
+### Разметка данных
+
+1. **Установка Label Studio:**
+   ```bash
+   pip install label-studio
+   ```
+2. **Запуск Label Studio:**
+   ```bash
+   label-studio start
+   ```
+3. Откройте инструмент по адресу: `http://localhost:8080`
+
+### Обучение модели
+
+Обучение модели возможно для различных типов данных (например, курение, подсчет товаров и т.д.). Настройте путь к файлу конфигурации и запустите соответствующий скрипт.
+
+Пример для обучения модели курения:
 
 ```bash
-python -m venv venv
-venv\activate
-pip install -r scripts/requirements.txt
-```
-Если у вас видокарта nvidia можно установить CUDA чтобы работало поддержка видеокарты(требуется перезагрузка после установки)
-
-```bash
-https://developer.nvidia.com/cuda-12-4-0-download-archive
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
-
-nvcc --version
+python scripts/smoke/train.py
 ```
 
-## **1. Инструкции по запуску**
+Для других типов данных измените путь к конфигурационному файлу в скрипте `train.py`:
 
-### **1.1. Подготовка данных**
+```python
+import sys
+import os
 
-1. **Сбор данных**: Соберите изображения, содержащие сигареты, и изображения без сигарет.
-2. **Разметка данных**: Используйте инструмент LabelImg или аналогичный для разметки сигарет на изображениях, сохраняя разметку в формате YOLO.
-3. **Организация данных**: Разместите изображения и файлы разметки в соответствующих папках внутри `data/`.
+# Добавляем путь к корневой директории
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-### **1.2. Обучение модели**
+from ultralytics import YOLO
+from scripts.config import MODEL_NAME, EPOCHS, IMG_SIZE, DEVICE
 
-1. **Настройка файла `cigarette.yaml`**: Убедитесь, что пути в файле корректны.
-2. **Запуск обучения**:
 
-```bash
-python scripts/train.py
+def main():
+    # Загрузка предобученной модели YOLO11
+    model = YOLO(MODEL_NAME) # выбираете в файле config.py
+
+    # Перенос модели на устройство
+    model.to(DEVICE)
+
+    print(f"Используется модель: {MODEL_NAME}, устройство: {DEVICE}")
+    
+    model.train(
+        data='open_product.yaml',  # Измените на нужный файл конфигурации
+        epochs=EPOCHS,
+        imgsz=IMG_SIZE,
+        project='models',
+        batch=9,  # Уменьшите до значения, подходящего для вашей системы
+        name=f'yolo11_cigarette_detection_{MODEL_NAME.split(".")[0]}', # измените на нужную имя модели
+        pretrained=True,
+        device=DEVICE,
+        amp=False,
+    )
+if __name__ == '__main__':
+    main()
 ```
 
-### **1.3. Запуск модели**
+Для запуска обучения различных типов:
 
-```bash
-python scripts/detect.py
-```
-1. Для выхода из обнаружения нажмите на "q"
+- **Курение:**
+
+  ```bash
+  python scripts/smoke/train.py
+  ```
+
+- **Подсчет товаров:**
+
+  ```bash
+  python scripts/count_product/train.py
+  ```
+
+- **[Вскрытие упаковки:](https://github.com/Koldim2001/YOLO-Patch-Based-Inference)**
+
+  ```bash
+  python scripts/open_product/train.py
+  ```
+
+- **Отслеживание взгляда:**
+
+  ```bash
+  python scripts/look_camera/train.py
+  ```
+
+---
+
+## Обнаружение и трекинг
+
+#### Запуск для разных типов обнаружения
+
+1. **Курение:**
+
+   - Реальное время:
+     ```bash
+     python scripts/smoke/detect.py
+     ```
+   - Обработка файлов:
+     ```bash
+     python scripts/smoke/detect_file.py
+     ```
+
+2. **Подсчет товаров:**
+
+   - Реальное время:
+     ```bash
+     python scripts/count_product/detect.py
+     ```
+   - Обработка файлов:
+     ```bash
+     python scripts/count_product/detect_file.py
+     ```
+
+3. **Вскрытие упаковки:**
+
+   - Реальное время:
+     ```bash
+     python scripts/open_product/detect.py
+     ```
+   - Обработка файлов:
+     ```bash
+     python scripts/open_product/detect_file.py
+     ```
+
+4. **Отслеживание взгляда в камеру:**
+
+   - Реальное время:
+     ```bash
+     python scripts/look_camera/detect.py
+     ```
+
+---
+
+## Дополнительные ресурсы
+
+- Улучшите точность обнаружения с помощью [YOLO Patch-Based Inference](https://github.com/Koldim2001/YOLO-Patch-Based-Inference).
+
+## Прогресс
+
+1. Составлен список задач и определена архитектура проекта.
+2. Проведен сбор и разметка начального датасета.
+3. Обучены и протестированы базовые модели.
+4. Собраны видеоматериалы для специфических действий (например, курение, обработка товаров).
+
+## Планируемые улучшения
+
+1. Интеграция с интерфейсом обработки событий в реальном времени.
+2. Добавление функционала для обнаружения дополнительных действий, таких как драки или падения.
+3. Повышение точности обнаружения в сложных условиях (например, при плохом освещении).
+
+---
+

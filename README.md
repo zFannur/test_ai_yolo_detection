@@ -36,7 +36,7 @@
 
 2. **Установка CUDA (опционально, для ускорения на видеокартах NVIDIA):**
 
-   - Загруз[ите с ](https://developer.nvidia.com/cuda-12-4-0-download-archive)[NVIDIA CUDA](https://developer.nvidia.com/cuda-12-4-0-download-archive).
+   - Загрузите с [NVIDIA CUDA](https://developer.nvidia.com/cuda-12-4-0-download-archive) (cuda-12-4-0).
    - После установки проверьте:
      ```bash
      nvcc --version
@@ -139,7 +139,7 @@ if __name__ == '__main__':
   python scripts/count_product/train.py
   ```
 
-- **[Вскрытие упаковки:](https://github.com/Koldim2001/YOLO-Patch-Based-Inference)**
+- **Вскрытие упаковки:**
 
   ```bash
   python scripts/open_product/train.py

@@ -21,8 +21,8 @@ model.to(DEVICE)
 print(f"Используется модель: {MODEL_NAME}, устройство: {DEVICE}")
 
 # Инициализация видеопотока из файла
-VIDEO_PATH = 'datasets/smoke/video/train.mp4'
-OUTPUT_PATH = 'datasets/smoke/video/train_detect.mp4'
+VIDEO_PATH = 'datasets/smoke/video/train.mp4'  # Путь к видеофайлу
+OUTPUT_PATH = 'datasets/smoke/video/train_detect.mp4'  # Путь для записи обработанного видео
 
 # Проверка существования файла
 if not os.path.exists(VIDEO_PATH):

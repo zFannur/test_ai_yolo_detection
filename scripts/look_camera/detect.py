@@ -8,8 +8,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 
 from ultralytics import YOLO
 import cv2
-import os
-import numpy as np
 from scripts.config import MODEL_NAME, EPOCHS, IMG_SIZE, DEVICE, DETECTION_DISTANCE
 
 # Путь к обученной модели

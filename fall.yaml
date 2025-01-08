@@ -1,0 +1,12 @@
+# fall.yaml
+
+path: C:/Users/zfann/PycharmProjects/test_ai_yolo_detect/datasets/fall  # Путь к датасету
+
+train: train/images
+val: valid/images
+test: test/images
+
+names:
+  0: Fall
+  1: Walk
+  2: Sit

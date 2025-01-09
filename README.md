@@ -163,6 +163,12 @@ if __name__ == '__main__':
   python scripts/fall/train.py
   ```
 
+- **Отслеживание порчи имущества:**
+
+  ```bash
+  python scripts/product_spoilage/train.py
+  ```
+
 ---
 
 ## Обнаружение и трекинг
@@ -218,6 +224,17 @@ if __name__ == '__main__':
    - Обработка файлов:
      ```bash
      python scripts/fall/detect_file.py
+     ```
+
+6. **Отслеживание порчи имущества:**
+
+   - Реальное время:
+     ```bash
+     python scripts/product_spoilage/detect.py
+     ```
+   - Обработка файлов:
+     ```bash
+     python scripts/product_spoilage/detect_file.py
      ```
 
 ---

@@ -1,4 +1,4 @@
-# python scripts/fall/train.py
+# python scripts/look_camera/train.py
 
 import sys
 import os
@@ -21,12 +21,12 @@ def main():
 
     # Обучение модели на датасете
     model.train(
-        data='fall.yaml',
+        data='product_spoilage.yaml',
         epochs=EPOCHS,
         imgsz=IMG_SIZE,
         project='models',
         batch=9,  # Уменьшите до значения, которое подходит вашей системе (если оперативки не хватает)
-        name=f'yolo11_fall_detection_{MODEL_NAME.split(".")[0]}',
+        name=f'yolo11_product_spoilage_detection_{MODEL_NAME.split(".")[0]}',
         pretrained=True,
         device=DEVICE,
         amp=False,  # Используем смешанную точность для оптимизации(если cpu при cudo должно быть False)

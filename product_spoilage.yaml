@@ -1,0 +1,10 @@
+# product_spoilage.yaml
+
+path: C:/Users/zfann/PycharmProjects/test_ai_yolo_detect/datasets/product_spoilage  # Путь к датасету
+
+train: train/images
+val: valid/images
+test: test/images
+
+names:
+  0: Box

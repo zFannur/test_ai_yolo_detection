@@ -1,4 +1,4 @@
-# python scripts/look_camera/detect_file.py
+# python scripts/fall/detect_file.py
 
 import sys
 import os
@@ -35,7 +35,7 @@ cap = cv2.VideoCapture(VIDEO_PATH)
 
 # Задаем новое разрешение кадра
 # WINDOW_WIDTH, WINDOW_HEIGHT = 480, 640
-WINDOW_WIDTH, WINDOW_HEIGHT = 640, 480
+WINDOW_WIDTH, WINDOW_HEIGHT = 480, 640
 
 # Создаем объект для записи видео
 output_video = cv2.VideoWriter(OUTPUT_PATH, cv2.VideoWriter_fourcc(*'mp4v'),
@@ -62,9 +62,7 @@ while True:
             # Определяем текст и цвет
             label = f"ID: {int(track_id)}"
             colors = {
-                0: (255, 0, 0),  # Красный
-                1: (0, 0, 255),  # Синий
-                2: (255, 255, 0)  # Желтый
+                0: (0, 0, 255),  # Красный
             }
 
             color = colors.get(cls, (0, 0, 0))  # По умолчанию (0, 0, 0) — черный
@@ -76,17 +74,13 @@ while True:
 
             # Подпись объектов
             if cls == 0:
-                cv2.putText(frame, 'Fall', (x1, y2 + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-            elif cls == 1:
-                cv2.putText(frame, 'Walk', (x1, y2 + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 3)
-            elif cls == 2:
-                cv2.putText(frame, 'Sit', (x1, y2 + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                cv2.putText(frame, 'Fall', (x1, y2 + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 0)
 
     # Запись обработанного кадра
     output_video.write(frame)
 
     # Отображение кадра в реальном времени
-    cv2.imshow('Look camera Detection Tracking', frame)
+    cv2.imshow('Fall Detection', frame)
 
     # Выход по нажатию клавиши 'q'
     if cv2.waitKey(1) & 0xFF == ord('q'):

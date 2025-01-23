@@ -91,7 +91,7 @@
 Пример для обучения модели курения:
 
 ```bash
-python scripts/smoke/train.py
+python features/smoke/train.py
 ```
 
 Для других типов данных измените путь к конфигурационному файлу в скрипте `train.py`:
@@ -104,29 +104,31 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from ultralytics import YOLO
-from scripts.config import MODEL_NAME, EPOCHS, IMG_SIZE, DEVICE
+from lib.core.config import MODEL_NAME, EPOCHS, IMG_SIZE, DEVICE
 
 
 def main():
     # Загрузка предобученной модели YOLO11
-    model = YOLO(MODEL_NAME) # выбираете в файле config.py
+    model = YOLO(MODEL_NAME)  # выбираете в файле config.py
 
     # Перенос модели на устройство
     model.to(DEVICE)
 
     print(f"Используется модель: {MODEL_NAME}, устройство: {DEVICE}")
-    
+
     model.train(
         data='open_product.yaml',  # Измените на нужный файл конфигурации
         epochs=EPOCHS,
         imgsz=IMG_SIZE,
         project='models',
         batch=9,  # Уменьшите до значения, подходящего для вашей системы
-        name=f'yolo11_cigarette_detection_{MODEL_NAME.split(".")[0]}', # измените на нужную имя модели
+        name=f'yolo11_cigarette_detection_{MODEL_NAME.split(".")[0]}',  # измените на нужную имя модели
         pretrained=True,
         device=DEVICE,
         amp=False,
     )
+
+
 if __name__ == '__main__':
     main()
 ```
@@ -136,37 +138,37 @@ if __name__ == '__main__':
 - **Курение:**
 
   ```bash
-  python scripts/smoke/train.py
+  python features/smoke/train.py
   ```
 
 - **Подсчет товаров:**
 
   ```bash
-  python scripts/count_product/train.py
+  python features/count_product/train.py
   ```
 
 - **Вскрытие упаковки:**
 
   ```bash
-  python scripts/open_product/train.py
+  python features/open_product/train.py
   ```
 
 - **Отслеживание взгляда:**
 
   ```bash
-  python scripts/look_camera/train.py
+  python features/look_camera/train.py
   ```
   
 - **Отслеживание падения:**
 
   ```bash
-  python scripts/fall/train.py
+  python features/fall/train.py
   ```
 
 - **Отслеживание порчи имущества:**
 
   ```bash
-  python scripts/product_spoilage/train.py
+  python features/product_spoilage/train.py
   ```
 
 ---
@@ -179,62 +181,62 @@ if __name__ == '__main__':
 
    - Реальное время:
      ```bash
-     python scripts/smoke/detect.py
+     python features/smoke/detect.py
      ```
    - Обработка файлов:
      ```bash
-     python scripts/smoke/detect_file.py
+     python features/smoke/detect_file.py
      ```
 
 2. **Подсчет товаров:**
 
    - Реальное время:
      ```bash
-     python scripts/count_product/detect.py
+     python features/count_product/detect.py
      ```
    - Обработка файлов:
      ```bash
-     python scripts/count_product/detect_file.py
+     python features/count_product/detect_file.py
      ```
 
 3. **Вскрытие упаковки:**
 
    - Реальное время:
      ```bash
-     python scripts/open_product/detect.py
+     python features/open_product/detect.py
      ```
    - Обработка файлов:
      ```bash
-     python scripts/open_product/detect_file.py
+     python features/open_product/detect_file.py
      ```
 
 4. **Отслеживание взгляда в камеру:**
 
    - Реальное время:
      ```bash
-     python scripts/look_camera/detect.py
+     python features/look_camera/detect.py
      ```
      
 5. **Отслеживание падения:**
 
    - Реальное время:
      ```bash
-     python scripts/fall/detect.py
+     python features/fall/detect.py
      ```
    - Обработка файлов:
      ```bash
-     python scripts/fall/detect_file.py
+     python features/fall/detect_file.py
      ```
 
 6. **Отслеживание порчи имущества:**
 
    - Реальное время:
      ```bash
-     python scripts/product_spoilage/detect.py
+     python features/product_spoilage/detect.py
      ```
    - Обработка файлов:
      ```bash
-     python scripts/product_spoilage/detect_file.py
+     python features/product_spoilage/detect_file.py
      ```
 
 ---

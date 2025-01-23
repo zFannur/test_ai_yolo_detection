@@ -1,16 +1,15 @@
-# scripts/smoke/detect.py
+# python features/smoke/detect_file.py
 
 import sys
 import os
-
-import numpy as np
 
 # Добавляем путь к корневой директории
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from ultralytics import YOLO
 import cv2
-from scripts.config import MODEL_NAME, EPOCHS, IMG_SIZE, DEVICE, DETECTION_DISTANCE, SMOKE_DETECTION_DISTANCE
+import numpy as np
+from lib.core.config import MODEL_NAME, DEVICE, SMOKE_DETECTION_DISTANCE
 
 # Путь к обученной модели
 MODEL_PATH = f'models/yolo11_cigarette_detection_{MODEL_NAME.split(".")[0]}/weights/best.pt'
@@ -21,13 +20,36 @@ model.to(DEVICE)
 
 print(f"Используется модель: {MODEL_NAME}, устройство: {DEVICE}")
 
+# Инициализация видеопотока из файла
+VIDEO_PATH = 'datasets/smoke/video/train.mp4'  # Путь к видеофайлу
+OUTPUT_PATH = 'datasets/smoke/video/train_detect.mp4'  # Путь для записи обработанного видео
+
+# Проверка существования файла
+if not os.path.exists(VIDEO_PATH):
+    print("Файл не найден. Проверьте путь.")
+    exit()
+
 # Инициализация видеопотока
-cap = cv2.VideoCapture(2)  # Замените '0' на путь к видеофайлу, если нужно
+cap = cv2.VideoCapture(VIDEO_PATH)
+# cap = cv2.VideoCapture(2)  # Замените '0' на путь к видеофайлу, если нужно
+
+# Задаем новое разрешение кадра
+# WINDOW_WIDTH, WINDOW_HEIGHT = 480, 640
+WINDOW_WIDTH, WINDOW_HEIGHT = 640, 480
+
+# Создаем объект для записи видео
+output_video = cv2.VideoWriter(OUTPUT_PATH, cv2.VideoWriter_fourcc(*'mp4v'),
+                               int(cap.get(cv2.CAP_PROP_FPS)), (WINDOW_WIDTH, WINDOW_HEIGHT))
+
+print(f"Запись будет сохранена в: {OUTPUT_PATH}")
 
 while True:
     ret, frame = cap.read()
     if not ret:
         break
+
+    # Изменение размера кадра до 480x640
+    frame = cv2.resize(frame, (WINDOW_WIDTH, WINDOW_HEIGHT))
 
     # Обнаружение объектов с помощью модели YOLO11
     results = model.predict(frame)
@@ -68,12 +90,18 @@ while True:
                 # Обновляем цвет прямоугольника вокруг человека
                 cv2.rectangle(frame, (x1_person, y1_person), (x2_person, y2_person), (0, 0, 255), 2)
 
-    # Отображение кадра
-    cv2.imshow('Smoking Detection', frame)
+    # Запись обработанного кадра
+    output_video.write(frame)
+
+    # Отображение кадра в реальном времени
+    cv2.imshow('Open Product Detection Tracking', frame)
 
     # Выход по нажатию клавиши 'q'
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 cap.release()
+output_video.release()
 cv2.destroyAllWindows()
+
+print(f"Видео с трекингом сохранено в: {OUTPUT_PATH}")

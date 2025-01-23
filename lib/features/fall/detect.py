@@ -1,4 +1,4 @@
-# python scripts/product_spoilage/detect.py
+# python features/open_product/detect.py
 
 import sys
 import os
@@ -8,10 +8,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 
 from ultralytics import YOLO
 import cv2
-from scripts.config import MODEL_NAME, EPOCHS, IMG_SIZE, DEVICE, DETECTION_DISTANCE
+from lib.core.config import MODEL_NAME, DEVICE
 
 # Путь к обученной модели
-MODEL_PATH = f'models/yolo11_product_spoilage_detection_{MODEL_NAME.split(".")[0]}/weights/best.pt'
+MODEL_PATH = f'models/yolo11_fall_detection_{MODEL_NAME.split(".")[0]}/weights/best.pt'
 
 # Загрузка обученной модели
 model = YOLO(MODEL_PATH)
@@ -20,7 +20,7 @@ model.to(DEVICE)
 print(f"Используется модель: {MODEL_NAME}, устройство: {DEVICE}")
 
 # Инициализация видеопотока из файла
-VIDEO_PATH = 'datasets/product_spoilage/video/train.mp4'
+VIDEO_PATH = 'datasets/fall/video/train.mp4'
 
 # Проверка существования файла
 if os.path.exists(VIDEO_PATH):

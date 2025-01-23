@@ -1,4 +1,4 @@
-# python scripts/look_camera/train.py
+# features/train.py
 
 import sys
 import os
@@ -7,7 +7,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from ultralytics import YOLO
-from scripts.config import MODEL_NAME, EPOCHS, IMG_SIZE, DEVICE
+from lib.core.config import MODEL_NAME, EPOCHS, IMG_SIZE, DEVICE
 
 
 def main():
@@ -21,12 +21,12 @@ def main():
 
     # Обучение модели на датасете
     model.train(
-        data='product_spoilage.yaml',
+        data='smoke.yaml',
         epochs=EPOCHS,
         imgsz=IMG_SIZE,
         project='models',
         batch=9,  # Уменьшите до значения, которое подходит вашей системе (если оперативки не хватает)
-        name=f'yolo11_product_spoilage_detection_{MODEL_NAME.split(".")[0]}',
+        name=f'yolo11_cigarette_detection_{MODEL_NAME.split(".")[0]}',
         pretrained=True,
         device=DEVICE,
         amp=False,  # Используем смешанную точность для оптимизации(если cpu при cudo должно быть False)

@@ -1,5 +1,6 @@
-opencv-python
-numpy
-ultralytics
+opencv-python~=4.10.0.84
+numpy~=1.26.4
+ultralytics~=8.3.51
 label-studio
 psycopg2-binary
+torch~=2.5.1+cu124

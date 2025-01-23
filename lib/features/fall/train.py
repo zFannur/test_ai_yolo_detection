@@ -1,4 +1,4 @@
-# python scripts/fall/train.py
+# python features/fall/train.py
 
 import sys
 import os
@@ -7,7 +7,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from ultralytics import YOLO
-from scripts.config import MODEL_NAME, EPOCHS, IMG_SIZE, DEVICE
+from lib.core.config import MODEL_NAME, EPOCHS, IMG_SIZE, DEVICE
 
 
 def main():

@@ -1,4 +1,4 @@
-# python scripts/open_product/detect.py
+# python features/open_product/detect.py
 
 import sys
 import os
@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 
 from ultralytics import YOLO
 import cv2
-from scripts.config import MODEL_NAME, EPOCHS, IMG_SIZE, DEVICE, DETECTION_DISTANCE
+from lib.core.config import MODEL_NAME, DEVICE
 
 # Путь к обученной модели
 MODEL_PATH = f'models/yolo11_look_camera_detection_{MODEL_NAME.split(".")[0]}/weights/best.pt'

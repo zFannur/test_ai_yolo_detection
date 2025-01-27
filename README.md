@@ -236,7 +236,7 @@ if __name__ == '__main__':
      ```
    - Обработка файлов:
      ```bash
-     python features/product_spoilage/detect_file.py
+     python C:\Users\zfann\PycharmProjects\test_ai_yolo_detect\lib\features\product_spoilage\main.py
      ```
 
 ---

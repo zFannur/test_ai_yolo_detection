@@ -61,6 +61,8 @@ class VideoProcessor:
             self.writer.release()
         cv2.destroyAllWindows()
 
+# В перспективе для расчета расстояния можно использовать библиотеку ultralytics
+# https://docs.ultralytics.com/ru/guides/distance-calculation/#what-is-distance-calculation
 
 if __name__ == "__main__":
     source = "datasets/product_spoilage/video/train2.mp4"

@@ -1,0 +1,10 @@
+# long_delay_shelf.yaml
+
+path: C:/Users/zfann/PycharmProjects/test_ai_yolo_detect/datasets/long_delay_shelf
+
+train: train/images
+val: valid/images
+test: test/images
+
+names:
+  0: box

@@ -19,15 +19,15 @@
 9.  ✅ Контроль вскрытия упаковки. (open_product)
 10. ❌ Разметка зон работы.
 11. ❌ Интерфейс для обработки событий
-12. ❌ подсчитывать время рядом с полкой когда сует руку в стелаж (long_delay_shelf)
+12. ✅ подсчитывать время рядом с полкой когда сует руку в стелаж (long_delay_shelf)
 13. ✅ падение товара и порча (product_spoilage)
 14. ❌ агрессивная жестикуляция
 15. ✅ вскрытие пакета внутри склада на пвз (open_product)
 16. ❌ насвай принимает (nasvay)
 17. ❌ облакачиваются на тележку
 18. ❌ падение товара из полки
-19. ❌ определение бездействия человека
-
+19. ✅ определение бездействия человека (inactivity_detection)
+ 
 ---
 
 ## Настройка проекта
@@ -250,6 +250,15 @@ if __name__ == '__main__':
 ---
 
 ## Дополнительные ресурсы
+
+- готовая модель для обнаружения курения: https://www.kaggle.com/models/sanchris/smoking-detection
+- для обнаружения чисел: https://www.kaggle.com/models/abdelrahmanatef01/substitution_board
+- обнаруживает животных: https://github.com/jamescdericco/animal-detector
+- для обнаружения сиз: https://www.kaggle.com/models/luiscrmartins/yolo11n-trained-ppe-model
+- обнаруживает человека и лицо: https://www.kaggle.com/models/luiscrmartins/yolo11s-trained-to-detect-person
+- обнаружение животных машин и тд: https://www.kaggle.com/models/agentmorris/megadetector
+- оценка скорости движения машин: https://www.kaggle.com/models/pythonistasamurai/yolov10x-supervision-vehicle-speed-estimation
+- определяет время прибывания: https://www.kaggle.com/models/pythonistasamurai/yolov10x-supervision-queue-count-model
 
 - Улучшите точность обнаружения с помощью [YOLO Patch-Based Inference](https://github.com/Koldim2001/YOLO-Patch-Based-Inference).
 

@@ -1,0 +1,12 @@
+# fire_smoke.yaml
+
+path: C:/Users/zfann/PycharmProjects/test_ai_yolo_detect/datasets/fire_smoke
+
+train: train/images
+val: valid/images
+test: test/images
+
+names:
+  0: fire
+  1: default
+  2: smoke

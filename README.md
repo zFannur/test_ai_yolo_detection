@@ -261,6 +261,7 @@ if __name__ == '__main__':
 - определяет время прибывания: https://www.kaggle.com/models/pythonistasamurai/yolov10x-supervision-queue-count-model
 
 - Улучшите точность обнаружения с помощью [YOLO Patch-Based Inference](https://github.com/Koldim2001/YOLO-Patch-Based-Inference).
+```pip install patched_yolo_infer```
 
 ## Прогресс
 

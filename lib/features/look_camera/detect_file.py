@@ -1,91 +1,75 @@
-# python features/look_camera/detect_file.py
-
 import sys
 import os
-
-# Добавляем путь к корневой директории
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-
-from ultralytics import YOLO
 import cv2
-import os
+import time
+from ultralytics import YOLO
 from lib.core.config import MODEL_NAME, DEVICE
 
-# Путь к обученной модели
-MODEL_PATH = f'models/yolo11_look_camera_detection_{MODEL_NAME.split(".")[0]}/weights/best.pt'
+# Формируем путь к обученной модели по шаблону
+MODEL_PATH = f'models/yolo11_fire_smoke_detection_{MODEL_NAME.split(".")[0]}/weights/best.pt'
+print(f"Используем модель: {MODEL_PATH} на устройстве: {DEVICE}")
 
-# Загрузка обученной модели
+# Загружаем обученную модель
 model = YOLO(MODEL_PATH)
 model.to(DEVICE)
+model.overrides["conf"] = 0.5
+model.overrides["show"] = False
 
-print(f"Используется модель: {MODEL_NAME}, устройство: {DEVICE}")
+# Пути к видео
+VIDEO_PATH = "datasets/fire_smoke/video/input2.mp4"   # Входное видео
+OUTPUT_PATH = "datasets/fire_smoke/video/output2.mp4"   # Выходной файл
 
-# Инициализация видеопотока из файла
-VIDEO_PATH = 'datasets/look_camera/video/train.mp4'
-OUTPUT_PATH = 'datasets/look_camera/video/train_detect.mp4'
+def main():
+    cap = cv2.VideoCapture(VIDEO_PATH)
+    if not cap.isOpened():
+        print(f"Не удалось открыть видео: {VIDEO_PATH}")
+        return
 
-# Проверка существования файла
-if not os.path.exists(VIDEO_PATH):
-    print("Файл не найден. Проверьте путь.")
-    exit()
+    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps    = cap.get(cv2.CAP_PROP_FPS) if cap.get(cv2.CAP_PROP_FPS) > 0 else 25
 
-# Инициализация видеопотока
-# cap = cv2.VideoCapture(VIDEO_PATH)
-cap = cv2.VideoCapture(2)  # Замените '0' на путь к видеофайлу, если нужно
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    writer = cv2.VideoWriter(OUTPUT_PATH, fourcc, fps, (width, height))
 
-# Задаем новое разрешение кадра
-# WINDOW_WIDTH, WINDOW_HEIGHT = 480, 640
-WINDOW_WIDTH, WINDOW_HEIGHT = 640, 480
+    print("Начало детекции огня и дыма...")
 
-# Создаем объект для записи видео
-output_video = cv2.VideoWriter(OUTPUT_PATH, cv2.VideoWriter_fourcc(*'mp4v'),
-                               int(cap.get(cv2.CAP_PROP_FPS)), (WINDOW_WIDTH, WINDOW_HEIGHT))
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-print(f"Запись будет сохранена в: {OUTPUT_PATH}")
+        # Выполнение детекции объектов на кадре
+        results = model.predict(frame, conf=0.5, verbose=False)
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+        # Для каждого обнаруженного результата (обычно один результат на кадр)
+        for result in results:
+            if result.boxes is None:
+                continue
+            # Проходим по всем обнаруженным bounding box
+            for box in result.boxes:
+                cls = int(box.cls[0])
+                label = model.names.get(cls, str(cls))
+                conf = float(box.conf[0])
+                # Получаем координаты bounding box: (x1, y1, x2, y2)
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                # Рисуем прямоугольник
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                # Рисуем подпись
+                cv2.putText(frame, f"{label} {conf:.2f}", (x1, y1 - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                # Логирование обнаружения
+                print(f"{time.strftime('%H:%M:%S')} - Detected {label} with confidence {conf:.2f} at {(x1, y1, x2, y2)}")
 
-    # Изменение размера кадра до 480x640
-    frame = cv2.resize(frame, (WINDOW_WIDTH, WINDOW_HEIGHT))
+        writer.write(frame)
+        cv2.imshow("Fire and Smoke Detection", frame)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
 
-    # Обнаружение и трекинг объектов с использованием YOLO
-    results = model.track(frame, conf=0.5, persist=True)
+    cap.release()
+    writer.release()
+    cv2.destroyAllWindows()
 
-    if results[0].boxes.id is not None:  # Проверка наличия треков
-        for box, track_id in zip(results[0].boxes.xyxy, results[0].boxes.id):
-            x1, y1, x2, y2 = map(int, box.tolist())  # Координаты рамки
-            cls = int(results[0].boxes.cls[results[0].boxes.id == track_id])
 
-            # Определяем текст и цвет
-            label = f"ID: {int(track_id)}"
-            color = (0, 0, 255) if cls == 0 else (0, 255, 0)  # Цвет для 'Product' или 'Open product'
-
-            # Отображение рамки и ID
-            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 1)  # Уменьшенная толщина
-            cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5, color, 1)  # Уменьшенный текст
-
-            # Подпись объектов
-            if cls == 0:
-                cv2.putText(frame, 'Look_camera', (x1, y2 + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-            elif cls == 1:
-                cv2.putText(frame, 'Normal', (x1, y2 + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-
-    # Запись обработанного кадра
-    output_video.write(frame)
-
-    # Отображение кадра в реальном времени
-    cv2.imshow('Look camera Detection Tracking', frame)
-
-    # Выход по нажатию клавиши 'q'
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-cap.release()
-output_video.release()
-cv2.destroyAllWindows()
-
-print(f"Видео с трекингом сохранено в: {OUTPUT_PATH}")
+if __name__ == "__main__":
+    main()

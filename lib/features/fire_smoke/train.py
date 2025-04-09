@@ -1,3 +1,4 @@
+# python features/look_camera/train.py
 
 import sys
 import os
@@ -20,12 +21,12 @@ def main():
 
     # Обучение модели на датасете
     model.train(
-        data='fire_smoke.yaml',
+        data='look_camera.yaml',
         epochs=EPOCHS,
         imgsz=IMG_SIZE,
         project='models',
         batch=9,  # Уменьшите до значения, которое подходит вашей системе (если оперативки не хватает)
-        name=f'yolo11_fire_smoke_detection_{MODEL_NAME.split(".")[0]}',
+        name=f'yolo11_look_camera_detection_{MODEL_NAME.split(".")[0]}',
         pretrained=True,
         device=DEVICE,
         amp=False,  # Используем смешанную точность для оптимизации(если cpu при cudo должно быть False)

@@ -260,6 +260,7 @@ if __name__ == '__main__':
 - обнаружение животных машин и тд: https://www.kaggle.com/models/agentmorris/megadetector
 - оценка скорости движения машин: https://www.kaggle.com/models/pythonistasamurai/yolov10x-supervision-vehicle-speed-estimation
 - определяет время прибывания: https://www.kaggle.com/models/pythonistasamurai/yolov10x-supervision-queue-count-model
+- датасет и обнаружение огня https://www.kaggle.com/code/rafaeldrago/yolo8n-fire-detection-computer-vision
 
 - Улучшите точность обнаружения с помощью [YOLO Patch-Based Inference](https://github.com/Koldim2001/YOLO-Patch-Based-Inference).
 ```pip install patched_yolo_infer```

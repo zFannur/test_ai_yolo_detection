@@ -5,3 +5,4 @@ label-studio
 psycopg2-binary
 torch~=2.5.1+cu124
 mediapipe
+av

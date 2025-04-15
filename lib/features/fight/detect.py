@@ -1,216 +1,144 @@
-# lib/detect.py
-
 import cv2
 import torch
 import numpy as np
 import os
+import time
 from torchvision import transforms
 import torch.nn.functional as F
-
-# Импортируем модель
-try:
-    from lib.features.fight.model_3dcnn import My3DCNN
-except ImportError:
-    print("Ошибка: Не удалось импортировать My3DCNN.")
-    exit()
-
-# Импортируем конфиг
-from lib.features.fight.config import (
-    NUM_FRAMES, IMG_SIZE, STABLE_THRESHOLD,
-    MODEL_SAVE_DIR,
-    # Можно импортировать NUM_CLASSES, если нужно
-    # и т.д.
-)
+from lib.features.fight.model_3dcnn import My3DCNN
+from lib.features.fight.config import NUM_FRAMES, IMG_SIZE, STABLE_THRESHOLD, MODEL_SAVE_DIR, NUM_CLASSES, TEST_VIDEO_PATH
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Нормализация (такая же, что применялась при обучении)
+# Нормализация, как при обучении
 normalize_transform = transforms.Normalize(
     mean=[0.485, 0.456, 0.406],
     std=[0.229, 0.224, 0.225]
 )
 
-def preprocess_frame_buffer(frames_buffer):
-    video_np = np.stack(frames_buffer, axis=0)  # [T, H, W, C]
-    video_tensor = torch.from_numpy(video_np).permute(0, 3, 1, 2).float()  # -> [T, C, H, W]
-    video_tensor = video_tensor / 255.0
-
-    # Нормализация
-    normalized_frames = [normalize_transform(frame) for frame in video_tensor]
-    normalized_video = torch.stack(normalized_frames)
-
-    # Меняем порядок на [C, T, H, W]
-    final_tensor = normalized_video.permute(1, 0, 2, 3)
-    return final_tensor
+def preprocess_frame_buffer(frames):
+    """
+    Обрабатывает список кадров для подачи в модель.
+    Каждый кадр нормализуется и приводится к формату [C, T, H, W].
+    """
+    video_np = np.stack(frames, axis=0)  # [T, H, W, C]
+    video_tensor = torch.from_numpy(video_np).permute(0, 3, 1, 2).float() / 255.0
+    video_tensor = torch.stack([normalize_transform(frame) for frame in video_tensor])
+    return video_tensor.permute(1, 0, 2, 3)  # [C, T, H, W]
 
 def detect_from_file(video_path, model, device, stable_threshold=STABLE_THRESHOLD):
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        print(f"Ошибка: невозможно открыть видеофайл: {video_path}")
+        print("Не удалось открыть видеофайл.")
         return
 
-    cv2.namedWindow("Fight Detection - Original", cv2.WINDOW_AUTOSIZE)
-    cv2.namedWindow("Fight Detection - Model View", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("Fight Detection - Model View", 400, 400)
+    # Определяем целевые размеры для отображения/записи (640x480)
+    target_width, target_height = 640, 480
+    fps = cap.get(cv2.CAP_PROP_FPS)
+
+    # Формируем путь и имя для сохранения выходного видео
+    dir_name = os.path.dirname(video_path)
+    base_name = os.path.basename(video_path)
+    output_name = "output_" + base_name
+    output_path = os.path.join(dir_name, output_name)
+
+    # Создаем объект VideoWriter с разрешением 640x480
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    out = cv2.VideoWriter(output_path, fourcc, fps, (target_width, target_height))
+
+    # Создаем окно отображения (одно окно)
+    cv2.namedWindow("Original", cv2.WINDOW_AUTOSIZE)
 
     frames_buffer = []
-    frame_count = 0
-
-    stable_prediction_idx = -1
-    stable_confidence = 0.0
-    pending_prediction_idx = -1
+    stable_pred = -1
+    pending_pred = -1
     pending_count = 0
-    raw_prediction_idx = -1
-    raw_confidence = 0.0
-
     classes = {0: "noFight", 1: "fight"}
-    colors = {
-        0: (0, 255, 0),  # Зеленый
-        1: (0, 0, 255)   # Красный
-    }
-    color_text = (255, 255, 255)
+    colors = {0: (0, 255, 0), 1: (0, 0, 255)}
+
+    # Для усреднения детекций за 5 секунд
+    window_results = []
+    detection_window_start = time.time()
+    averaged_text = ""
 
     while True:
         ret, frame = cap.read()
         if not ret:
-            print("Видео закончилось или произошла ошибка чтения кадра.")
             break
 
-        # Показываем оригинальный кадр
-        display_frame_orig = frame
+        # Масштабируем исходный кадр до 640x480 без обрезания
+        display_frame = cv2.resize(frame, (target_width, target_height))
 
-        # Добавляем кадр в буфер (но перед этим приводим к размеру 112x112)
+        # Для подачи в модель используем исходный кадр: перевод в RGB и масштабирование до (IMG_SIZE x IMG_SIZE)
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        resized_frame = cv2.resize(rgb_frame, (IMG_SIZE, IMG_SIZE))
-        frames_buffer.append(resized_frame)
-        frame_count += 1
+        resized = cv2.resize(rgb_frame, (IMG_SIZE, IMG_SIZE))
+        frames_buffer.append(resized)
 
-        # Если накопили NUM_FRAMES
         if len(frames_buffer) == NUM_FRAMES:
             video_tensor = preprocess_frame_buffer(frames_buffer).unsqueeze(0).to(device)
-
             with torch.no_grad():
                 outputs = model(video_tensor)
                 probabilities = F.softmax(outputs, dim=1)[0]
-                raw_confidence, raw_pred_idx_tensor = torch.max(probabilities, dim=0)
-                raw_prediction_idx = raw_pred_idx_tensor.item()
-                raw_confidence = raw_confidence.item()
-
-            # Логика стабильности
-            if stable_prediction_idx == -1:
-                stable_prediction_idx = raw_prediction_idx
-                stable_confidence = raw_confidence
-                pending_prediction_idx = -1
-                pending_count = 0
+                conf, pred = torch.max(probabilities, dim=0)
+                current_pred = pred.item()
+                confidence = conf.item() * 100  # перевод в проценты
+            # Логика быстрой (стабильной) детекции
+            if stable_pred == -1:
+                stable_pred = current_pred
             else:
-                if raw_prediction_idx == stable_prediction_idx:
-                    pending_prediction_idx = -1
-                    pending_count = 0
-                    stable_confidence = raw_confidence
-                else:
-                    if pending_prediction_idx != raw_prediction_idx:
-                        pending_prediction_idx = raw_prediction_idx
+                if current_pred != stable_pred:
+                    if pending_pred != current_pred:
+                        pending_pred = current_pred
                         pending_count = 1
                     else:
                         pending_count += 1
                         if pending_count >= stable_threshold:
-                            stable_prediction_idx = pending_prediction_idx
-                            stable_confidence = raw_confidence
-                            pending_prediction_idx = -1
+                            stable_pred = pending_pred
+                            pending_pred = -1
                             pending_count = 0
-
-            # Берём «центральный» кадр для отображения
-            mid_index = NUM_FRAMES // 2
-            mid_frame_display = frames_buffer[mid_index]  # RGB
-            mid_frame_display_bgr = cv2.cvtColor(mid_frame_display, cv2.COLOR_RGB2BGR)
-
-            # Очистка буфера
             frames_buffer.pop(0)
+            # Отправляем результат в окно усреднения за 5 секунд
+            window_results.append(stable_pred)
+            current_time = time.time()
+            if current_time - detection_window_start >= 5:
+                # Усредняем результаты: если голосов за fight больше, чем за noFight, то итоговая детекция = fight.
+                fight_count = window_results.count(1)
+                nofight_count = window_results.count(0)
+                averaged_result = "fight" if fight_count > nofight_count else "noFight"
+                averaged_text = f"Average (5 sec): {averaged_result}"
+                # Сброс окна для следующего усреднения
+                detection_window_start = current_time
+                window_results = []
 
-        # Окно "Model View"
-        model_view_h = 400
-        model_view_w = 400
-        display_frame_processed = np.zeros((model_view_h, model_view_w, 3), dtype=np.uint8)
+            # Отображаем надпись с текущим предсказанием и процентом уверенности (уменьшенный шрифт)
+            immediate_text = f"Prediction: {classes.get(stable_pred, 'N/A')} ({confidence:.1f}%)"
+            cv2.putText(display_frame, immediate_text, (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, colors.get(stable_pred, (255, 255, 255)), 2)
 
-        # Отображаем центральный кадр, если он есть
-        if raw_prediction_idx != -1 and 'mid_frame_display_bgr' in locals():
-            resized_for_model = cv2.resize(mid_frame_display_bgr, (224, 224))
-            display_frame_processed[0:224, 0:224] = resized_for_model
+        # Отображаем отдельно усреднённое определение (более крупным шрифтом, ниже)
+        if averaged_text:
+            cv2.putText(display_frame, averaged_text, (10, 60),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
 
-        # Текст
-        text_x = 5
-        text_y = 240
-        line_step = 20
-
-        if stable_prediction_idx == -1:
-            cv2.putText(display_frame_processed, "Stable: Analyzing...",
-                        (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color_text, 1)
-            text_y += line_step
-        else:
-            stable_text = f"Stable: {classes[stable_prediction_idx]} ({stable_confidence:.2f})"
-            stable_color = colors[stable_prediction_idx]
-            cv2.putText(display_frame_processed, stable_text,
-                        (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, stable_color, 2)
-            text_y += line_step
-
-        if raw_prediction_idx != -1:
-            raw_text = f"Raw: {classes[raw_prediction_idx]} ({raw_confidence:.2f})"
-            raw_color = colors[raw_prediction_idx]
-            cv2.putText(display_frame_processed, raw_text,
-                        (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, raw_color, 2)
-            text_y += line_step
-
-        if pending_prediction_idx != -1:
-            pending_text = f"Pending: {classes[pending_prediction_idx]} ({pending_count}/{stable_threshold})"
-            pending_color = colors[pending_prediction_idx]
-            cv2.putText(display_frame_processed, pending_text,
-                        (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, pending_color, 2)
-            text_y += line_step
-
-        cv2.imshow("Fight Detection - Original", display_frame_orig)
-        cv2.imshow("Fight Detection - Model View", display_frame_processed)
-
+        cv2.imshow("Original", display_frame)
+        out.write(display_frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            print("Выход по требованию пользователя.")
             break
 
     cap.release()
+    out.release()
     cv2.destroyAllWindows()
-    print("Окна закрыты, выполнение завершено.")
-
+    print(f"Видео сохранено: {output_path}")
 
 def main():
-    print(f"Используется устройство: {DEVICE}")
-
-    # Инициализация модели
-    model_input_shape = (3, NUM_FRAMES, IMG_SIZE, IMG_SIZE)
-    model = My3DCNN(num_classes=2, input_shape=model_input_shape).to(DEVICE)
-
-    # Путь к финальной (или лучшей) модели
-    # Можно взять из config.py, например:
-    from lib.features.fight.config import MODEL_SAVE_DIR, TEST_VIDEO_PATH
-    model_path = os.path.join(MODEL_SAVE_DIR, "3dcnn_fight_final_ep6_bs32.pth")
-
+    model = My3DCNN(num_classes=NUM_CLASSES).to(DEVICE)
+    model_path = os.path.join(MODEL_SAVE_DIR, "3dcnn_fight_final.pth")
     if not os.path.isfile(model_path):
-        print(f"Ошибка: не найден файл весов: {model_path}")
+        print("Файл модели не найден.")
         return
-
-    try:
-        model.load_state_dict(torch.load(model_path, map_location=DEVICE))
-        model.eval()
-        print(f"Веса модели успешно загружены из: {model_path}")
-    except Exception as e:
-        print(f"Ошибка при загрузке весов модели: {e}")
-        return
-
-    # Файл с видео для теста
-    video_path = TEST_VIDEO_PATH
-    if not os.path.isfile(video_path):
-        print(f"Ошибка: не найден файл видео: {video_path}")
-        return
-
-    detect_from_file(video_path, model, DEVICE)
-
+    model.load_state_dict(torch.load(model_path, map_location=DEVICE))
+    model.eval()
+    detect_from_file(TEST_VIDEO_PATH, model, DEVICE)
 
 if __name__ == "__main__":
     main()
